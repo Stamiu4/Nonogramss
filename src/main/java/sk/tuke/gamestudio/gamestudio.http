@@ -1,0 +1,9 @@
+POST http://localhost:8080/api/score
+Content-Type: application/json
+
+{
+  "playedOn": "2025-04-13T23:50:00Z",
+  "game": "Nonograms",
+  "player": "Artem",
+  "score": 300
+}

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Игра — Пазл</title>
+    <style>
+        :root { --selected-color: #4dabf7; }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .auth-box {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1rem;
+        }
+
+        .auth-box a {
+            color: #1c7ed6;
+            font-weight: bold;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+            color: #495057;
+        }
+
+        table {
+            border-collapse: collapse;
+            max-width: 700px;
+            width: 100%;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        thead th, tbody th, th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: center;
+        }
+
+        thead th { background: #343a40; color: #fff; }
+        tbody th { background: #f1f3f5; text-align: left; font-weight: 500; }
+        tbody tr:nth-child(even) td { background: #f8f9fa; }
+        td:hover { background: #e2e6ea; cursor: pointer; }
+
+        .selected {
+            background-color: var(--selected-color) !important;
+            color: #fff;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .controls button, .controls input[type="color"] {
+            padding: 10px 16px;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .controls button {
+            background: linear-gradient(135deg, #4dabf7, #1c7ed6);
+            color: #fff;
+        }
+
+        #resultMessage {
+            font-weight: 600;
+            font-size: 1.2rem;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        #resultMessage.success { background: #d3f9d8; color: #2f9e44; }
+        #resultMessage.error { background: #ffe3e3; color: #c92a2a; }
+
+        form#commentForm {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        form#commentForm input,
+        form#commentForm textarea,
+        form#commentForm select {
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        form#commentForm button {
+            align-self: flex-start;
+            background-color: #4dabf7;
+            color: white;
+            font-weight: bold;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        @media(max-width: 600px) {
+            th, td { padding: 8px; font-size: 0.8rem; }
+            .controls { flex-direction: column; }
+            .controls button, .controls input[type="color"] { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 👤 Авторизация -->
+<div class="auth-box">
+    <span th:if="${session.user != null}">
+        👤 <span th:text="${session.user.username}">User</span>
+        <a th:href="@{/logout}">Выйти</a>
+    </span>
+    <span th:if="${session.user == null}">
+        <a th:href="@{/login}">Login</a>
+        <a th:href="@{/register}">Registration</a>
+    </span>
+</div>
+
+<h1 th:text="'Puzzle № ' + ${puzzleId}">Puzzle</h1>
+
+<table id="puzzleGrid">
+    <thead>
+    <tr>
+        <th></th>
+        <th th:each="colHint : ${hintPart2}" th:text="${colHint}">ColHint</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="rowHint, rowStat : ${hintPart1}">
+        <th th:text="${rowHint}">RowHint</th>
+        <td th:each="colHint, colStat : ${hintPart2}"
+            class="cell"
+            th:attr="data-x=${rowStat.index},data-y=${colStat.index}"> </td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="controls">
+    <button id="checkBtn">Check</button>
+    <button id="homeBtn" onclick="window.location='/'">Main Page</button>
+    <label for="colorPicker">Color:</label>
+    <input type="color" id="colorPicker" value="#4dabf7">
+</div>
+
+<div id="resultMessage"></div>
+
+<!-- 📝 Комментарий -->
+<form th:if="${session.user != null}" th:action="@{/comment/save}" method="post" id="commentForm">
+    <input type="hidden" name="player" th:value="${session.user.username}">
+    <input type="hidden" name="game" value="nonogram">
+    <textarea name="content" placeholder="Leave a comment..." required></textarea>
+
+    <label for="rating">Rating:</label>
+    <select name="rating" id="rating" required>
+        <option value="" disabled selected>Rate the game</option>
+        <option value="1">⭐</option>
+        <option value="2">⭐⭐</option>
+        <option value="3">⭐⭐⭐</option>
+        <option value="4">⭐⭐⭐⭐</option>
+        <option value="5">⭐⭐⭐⭐⭐</option>
+    </select>
+
+    <button type="submit">Post</button>
+</form>
+
+<!-- ⭐ Средний рейтинг -->
+<div style="margin-top: 30px; max-width: 600px;">
+    <h2>⭐ Average Rating</h2>
+    <div style="font-size: 1.5rem; color: #f1c40f;"
+         th:with="fullStars=${T(java.lang.Math).floor(averageRating)},
+                  hasHalf=${(averageRating - fullStars) >= 0.5}">
+        <span th:each="i : ${#numbers.sequence(1, 5)}">
+            <span th:if="${i <= fullStars}">★</span>
+            <span th:if="${i == fullStars + 1 and hasHalf}">⯨</span>
+            <span th:if="${i > fullStars + (hasHalf ? 1 : 0)}">☆</span>
+        </span>
+    </div>
+    <p th:text="'(' + ${averageRating} + ' / 5)'">(4.2 / 5)</p>
+</div>
+
+<script th:inline="javascript">
+    const puzzleId = /*[[${puzzleId}]]*/ 0;
+    const gridEl = document.getElementById('puzzleGrid');
+    const msgEl = document.getElementById('resultMessage');
+    const picker = document.getElementById('colorPicker');
+
+    gridEl.addEventListener('click', e => {
+        if (e.target.tagName === 'TD') {
+            e.target.classList.toggle('selected');
+        }
+    });
+
+    picker.addEventListener('input', () => {
+        document.documentElement.style.setProperty('--selected-color', picker.value);
+    });
+
+    document.getElementById('checkBtn').addEventListener('click', () => {
+        const rows = Array.from(document.querySelectorAll('#puzzleGrid tbody tr'));
+        const matrix = rows.map(tr =>
+            Array.from(tr.querySelectorAll('td')).map(td => td.classList.contains('selected'))
+        );
+
+        fetch(`/play/${puzzleId}/check`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(matrix)
+        })
+            .then(resp => resp.json())
+            .then(data => {
+                if (!data.ok) {
+                    document.querySelectorAll('#puzzleGrid td.selected')
+                        .forEach(td => td.classList.remove('selected'));
+                } else {
+                    const form = document.getElementById('commentForm');
+                    if (form) form.style.display = 'flex';
+
+                    // Сохраняем прогресс
+                    fetch(`/api/progress/mark-solved/${puzzleId}`, { method: 'POST' });
+                }
+
+                msgEl.textContent = data.message;
+                msgEl.classList.toggle('success', data.ok);
+                msgEl.classList.toggle('error', !data.ok);
+            })
+            .catch(err => {
+                console.error(err);
+                msgEl.textContent = 'Error sending data';
+                msgEl.className = 'error';
+            });
+    });
+</script>
+</body>
+</html>

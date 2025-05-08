@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Puzzle selection menu</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4f8;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            position: relative;
+        }
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            color: #2c3e50;
+        }
+        .auth-box {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1rem;
+        }
+        .auth-box a {
+            color: #1c7ed6;
+            font-weight: bold;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+        .auth-box a:hover { text-decoration: underline; }
+
+        .menu-section {
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 40px;
+        }
+
+        .menu-section h2 {
+            font-size: 1.6rem;
+            margin-bottom: 10px;
+        }
+
+        .menu-count {
+            font-size: 1rem;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .menu {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .menu-item {
+            position: relative;
+            background: linear-gradient(135deg, #6fb1fc, #4364f7);
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .menu-item a {
+            display: block;
+            padding: 30px 10px;
+            text-align: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+
+        .menu-item.solved {
+            position: relative;
+            opacity: 0.5;
+        }
+
+        .menu-item.solved::after {
+            content: "✔";
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 1.5rem;
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .section {
+            width: 100%;
+            max-width: 700px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stars {
+            font-size: 1.4rem;
+            color: #f1c40f;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 2rem; }
+            .menu-item a { padding: 25px 5px; font-size: 1rem; }
+            .auth-box { position: static; margin-bottom: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 👤 Авторизация -->
+<div class="auth-box">
+    <div th:if="${session.containsKey('user')} and ${session.user != null}">
+        👤 <span th:text="${session.user.username}">Username</span>
+        <a th:href="@{/logout}">Logout</a>
+    </div>
+    <div th:unless="${session.containsKey('user')} and ${session.user != null}">
+        <a th:href="@{/login}">Login</a>
+        <a th:href="@{/register}">Registration</a>
+    </div>
+</div>
+
+<h1 th:text="${message}">Choose a puzzle</h1>
+
+<div class="menu-section" th:each="level : ${difficultyLevels}">
+    <h2>
+        <span th:switch="${level}">
+            <span th:case="'Easy'">🟢 Easy</span>
+            <span th:case="'Medium'">🟡 Medium</span>
+            <span th:case="'Hard'">🔴 Hard</span>
+        </span>
+    </h2>
+
+    <!-- 📊 Количество нерешённых пазлов -->
+    <div class="menu-count">
+    <span th:switch="${level}">
+        <span th:case="'Easy'"   th:text="${remainingEasy == 0 ? 'None' : 'Remaining: ' + remainingEasy}">Remaining: 2</span>
+        <span th:case="'Medium'" th:text="${remainingMedium == 0 ? 'None' : 'Remaining: ' + remainingMedium}">Remaining: 4</span>
+        <span th:case="'Hard'"   th:text="${remainingHard == 0 ? 'None' : 'Remaining: ' + remainingHard}">Remaining: 4</span>
+    </span>
+    </div>
+
+
+
+    <div class="menu">
+        <div th:each="puzzle : ${availablePuzzles}"
+             th:if="${puzzle.difficulty == level}"
+             class="menu-item"
+             th:classappend="${solvedPuzzles.contains(puzzle.name)} ? ' solved'">
+            <a th:href="@{/play/{puzzle}(puzzle=${puzzle.name})}" th:text="${puzzle.name}">Puzzle</a>
+        </div>
+    </div>
+</div>
+
+
+<!-- ⭐ Рейтинг -->
+<div class="section">
+    <h2>⭐ Average Rating</h2>
+    <div class="stars"
+         th:with="fullStars=${T(java.lang.Math).floor(averageRating)},
+                  hasHalf=${(averageRating - fullStars) >= 0.5}">
+        <span th:each="i : ${#numbers.sequence(1, 5)}">
+            <span th:if="${i <= fullStars}">★</span>
+            <span th:if="${i == fullStars + 1 and hasHalf}">⯨</span>
+            <span th:if="${i > fullStars + (hasHalf ? 1 : 0)}">☆</span>
+        </span>
+    </div>
+    <p th:text="'(' + ${averageRating} + ' / 5)'">(4.5 / 5)</p>
+</div>
+
+<!-- 🏆 Очки -->
+<div class="section">
+    <h2>🏆 Top Scores</h2>
+    <ul>
+        <li th:each="score : ${topScores}"
+            th:text="${score.player + ': ' + score.score + ' pts'}">
+            Player: 100 pts
+        </li>
+    </ul>
+</div>
+
+<!-- 💬 Комментарии -->
+<div class="section">
+    <h2>💬 Recent Comments</h2>
+    <ul>
+        <li th:each="comment : ${comments}"
+            th:text="${comment.player + ': ' + comment.comment}">
+            Player: Cool game!
+        </li>
+    </ul>
+</div>
+
+</body>
+</html>
