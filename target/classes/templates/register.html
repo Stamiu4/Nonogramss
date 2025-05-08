@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to right, #74ebd5, #acb6e5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .auth-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 1.8rem;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 10px;
+            background: #4dabf7;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background: #339af0;
+        }
+
+        .back-link {
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .back-link a {
+            text-decoration: none;
+            color: #1c7ed6;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            color: #c92a2a;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+
+        .success {
+            color: #2f9e44;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+
+        @media(max-width: 480px) {
+            .auth-container {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .back-link {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="auth-container">
+    <h2>Registration</h2>
+
+    <div th:if="${error}" class="error" th:text="${error}">Error</div>
+    <div th:if="${success}" class="success" th:text="${success}">Success</div>
+
+    <form th:action="@{/register}" method="post">
+        <input type="text" name="username" placeholder="UserName" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="password" name="confirm" placeholder="Re-enter password" required>
+        <button type="submit">Create account</button>
+    </form>
+
+    <div class="back-link">
+        Already have an account? <a th:href="@{/login}">Login</a>
+    </div>
+    <div class="back-link">
+        <a th:href="@{/}">← Back to Menu</a>
+    </div>
+</div>
+</body>
+</html>
